@@ -7,10 +7,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 
-/* =========================
-   FIREBASE
-========================= */
-
 const firebaseConfig = {
     apiKey: "AIzaSyCL8-XcFDPFbFzxuHTC3KDVVEJcuXSeWVY",
     authDomain: "hw-calendar-cb09b.firebaseapp.com",
@@ -26,18 +22,20 @@ const db = getFirestore(app);
 const calendarDoc = doc(db, "calendar", "events");
 
 
-/* =========================
-   VARIABLES
-========================= */
 
 let currentDate = new Date();
 let selectedDateKey = null;
 let events = {};
 
 
-/* =========================
-   DOM ELEMENTS
-========================= */
+/* Event types: add a new one here + a matching option in index.html + CSS */
+
+const EVENT_TYPES = {
+    HW:      { label: "HOMEWORK", className: "" },
+    PROJECT: { label: "PROJECT",  className: "project" },
+    EXAM:    { label: "EXAM",     className: "exam" }
+};
+
 
 const calendar = document.getElementById("calendar");
 const monthYear = document.getElementById("monthYear");
@@ -54,10 +52,6 @@ const nextMonth =
 const saveButton =
     document.getElementById("saveEvent");
 
-
-/* =========================
-   LOAD EVENTS
-========================= */
 
 async function loadEvents() {
 
@@ -87,10 +81,6 @@ async function loadEvents() {
             );
 
 
-            /*
-             * Try to recover old localStorage data
-             */
-
             const oldData =
                 localStorage.getItem(
                     "hwCalendarEvents"
@@ -109,11 +99,6 @@ async function loadEvents() {
                         events
                     );
 
-
-                    /*
-                     * Upload old data
-                     * to Firestore
-                     */
 
                     await setDoc(
                         calendarDoc,
@@ -161,10 +146,6 @@ async function loadEvents() {
         );
 
 
-        /*
-         * Try localStorage if Firebase fails
-         */
-
         try {
 
             const oldData =
@@ -193,9 +174,6 @@ async function loadEvents() {
 }
 
 
-/* =========================
-   SAVE EVENTS
-========================= */
 
 async function saveEvents() {
 
@@ -224,9 +202,6 @@ async function saveEvents() {
 }
 
 
-/* =========================
-   CREATE CALENDAR
-========================= */
 
 function createCalendar() {
 
@@ -240,8 +215,6 @@ function createCalendar() {
         currentDate.getMonth();
 
 
-    /* Month title */
-
     monthYear.textContent =
         currentDate.toLocaleDateString(
             "en-US",
@@ -252,8 +225,6 @@ function createCalendar() {
         );
 
 
-    /* First day of month */
-
     const firstDay =
         new Date(
             year,
@@ -261,11 +232,6 @@ function createCalendar() {
             1
         );
 
-
-    /*
-     * Monday = 0
-     * Sunday = 6
-     */
 
     let startingDay =
         firstDay.getDay() - 1;
@@ -276,8 +242,6 @@ function createCalendar() {
     }
 
 
-    /* Days in month */
-
     const daysInMonth =
         new Date(
             year,
@@ -285,8 +249,6 @@ function createCalendar() {
             0
         ).getDate();
 
-
-    /* Empty cells */
 
     for (
         let i = 0;
@@ -305,8 +267,6 @@ function createCalendar() {
         );
     }
 
-
-    /* Create days */
 
     for (
         let day = 1;
@@ -336,8 +296,6 @@ function createCalendar() {
             "-" +
             String(day).padStart(2, "0");
 
-
-        /* Weekday */
 
         const weekday =
             date.toLocaleDateString(
@@ -386,31 +344,25 @@ function createCalendar() {
         }
 
 
-        /* =========================
-           EVENTS
-        ========================= */
-
         if (events[dateKey]) {
 
             events[dateKey].forEach(
                 (event, index) => {
+
+                    const typeInfo =
+                        EVENT_TYPES[event.type] ||
+                        EVENT_TYPES.HW;
+
 
                     const eventElement =
                         document.createElement(
                             "div"
                         );
 
-
                     eventElement.className =
                         "event " +
-                        (
-                            event.type === "PROJECT"
-                                ? "project"
-                                : ""
-                        );
+                        typeInfo.className;
 
-
-                    /* Type */
 
                     const typeElement =
                         document.createElement(
@@ -421,12 +373,8 @@ function createCalendar() {
                         "event-type";
 
                     typeElement.textContent =
-                        event.type === "PROJECT"
-                            ? "PROJECT"
-                            : "HOMEWORK";
+                        typeInfo.label;
 
-
-                    /* Title */
 
                     const titleElement =
                         document.createElement(
@@ -440,8 +388,6 @@ function createCalendar() {
                         event.title;
 
 
-                    /* Description */
-
                     const descriptionElement =
                         document.createElement(
                             "div"
@@ -453,8 +399,6 @@ function createCalendar() {
                     descriptionElement.textContent =
                         event.description || "";
 
-
-                    /* Delete */
 
                     const deleteButton =
                         document.createElement(
@@ -546,8 +490,6 @@ function createCalendar() {
         }
 
 
-        /* Open popup */
-
         dayElement.addEventListener(
             "click",
             function () {
@@ -566,9 +508,6 @@ function createCalendar() {
 }
 
 
-/* =========================
-   OPEN EVENT WINDOW
-========================= */
 
 function openEventWindow(dateKey) {
 
@@ -597,9 +536,6 @@ function openEventWindow(dateKey) {
 }
 
 
-/* =========================
-   CLOSE EVENT WINDOW
-========================= */
 
 function closeEventWindow() {
 
@@ -631,9 +567,6 @@ overlay.addEventListener(
 );
 
 
-/* =========================
-   SAVE EVENT
-========================= */
 
 saveButton.addEventListener(
     "click",
@@ -672,16 +605,12 @@ saveButton.addEventListener(
         }
 
 
-        /* Create date */
-
         if (!events[selectedDateKey]) {
 
             events[selectedDateKey] =
                 [];
         }
 
-
-        /* Add event */
 
         events[selectedDateKey].push({
 
@@ -706,9 +635,6 @@ saveButton.addEventListener(
 
         } catch (error) {
 
-            /*
-             * Undo local change
-             */
 
             events[selectedDateKey].pop();
 
@@ -732,9 +658,6 @@ saveButton.addEventListener(
 );
 
 
-/* =========================
-   MONTH NAVIGATION
-========================= */
 
 previousMonth.addEventListener(
     "click",
@@ -762,8 +685,5 @@ nextMonth.addEventListener(
 );
 
 
-/* =========================
-   START
-========================= */
 
 loadEvents();
